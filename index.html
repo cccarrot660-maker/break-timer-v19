@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>gxHo Break-Timer — NOAH345 💜 | Break Timer V11 PRO — NOAH345</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://apis.google.com/js/api.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div class="noah-brand">NOAH345 💜 — gxHo Break-Timer</div>
+
+
+<!-- AUTO-REDIRECT TO LOGIN IF NOT SIGNED IN -->
+<script>
+(function(){
+  try{
+    const s = JSON.parse(localStorage.getItem('breaker_settings_v1')||'{}');
+    if(!s || !s.googleUser || !s.googleUser.email){
+      // redirect to login page for Google-only authentication
+      if(window.location.pathname.indexOf('login.html')===-1){
+        window.location.replace('login.html');
+      }
+    }
+  }catch(e){}
+})();
+</script>
+<!-- END AUTO-REDIRECT -->
+>
+  <header class="topbar">
+    <div class="brand">
+      <h1>NOAH345</h1>
+      <div class="subtitle">Break Timer — Neon CyberUI</div>
+    </div>
+    <nav class="nav">
+      <button id="darkToggle" class="btn ghost">โหมดมืด</button>
+      <button id="openProfile" class="btn ghost">โปรไฟล์</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="leftPanel card">
+      <div class="timerHeader">
+        <select id="modeSelect" class="select">
+          <option value="พัก">พัก</option>
+          <option value="ทำงาน">ทำงาน</option>
+        </select>
+        <div class="dailyTargetWrap">เป้ารายวัน <input id="dailyTargetInput" type="number" min="0" value="60" /> นาที</div>
+      </div>
+
+      <div class="timerCard timer-display">
+        <div id="timerLabel" class="status">สถานะ: พร้อม</div>
+        <div id="timeLarge" class="time">00:00:00</div>
+        <div id="timeInfo" class="info">ไม่มีการจับเวลา</div>
+        <div class="daily-progress">
+          <div class="daily-progress__meta">วันนี้พักไปแล้ว: <strong id="sumTodayLarge">0</strong> นาที</div>
+          <div class="progressWrap"><div id="sumTodayBar" class="progressBar" role="progressbar" aria-valuemin="0" aria-valuemax="100" style="width:0%"></div></div>
+          <div class="daily-progress__target">เป้ารายวัน: <strong id="dailyTargetLabel">60</strong> นาที</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="startBtn" class="btn primary large">เริ่ม</button>
+        <button id="pauseBtn" class="btn alt large">พัก/Resume</button>
+        <button id="endBtn" class="btn warn large">จบ</button>
+      </div>
+
+      <div class="settingsGrid">
+        <label>ตั้งเวลารอบ (นาที)
+          <input id="limitMinutes" type="number" min="1" value="30" />
+        </label>
+        <label>เตือนก่อน (นาที)
+          <input id="warnBefore" type="number" min="0" value="5" />
+        </label>
+        <label>เสียงแจ้งเตือน
+          <input id="soundToggle" type="checkbox" checked />
+        </label>
+      </div>
+
+      <div class="notes">
+        <button id="manualToggle" class="btn ghost">เพิ่มบันทึกแบบกำหนดเอง</button>
+        <div id="manualForm" class="manual hidden">
+          <input id="manualType" placeholder="ประเภท (เช่น พักกลางวัน)" />
+          <input id="manualStart" type="datetime-local" />
+          <input id="manualEnd" type="datetime-local" />
+          <input id="manualNote" placeholder="หมายเหตุ (ไม่บังคับ)" />
+          <div class="row">
+            <button id="manualSave" class="btn primary">บันทึก</button>
+            <button id="manualCancel" class="btn ghost">ยกเลิก</button>
+          </div>
+        </div>
+      </div>
+    
+<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+  <label style="display:flex;gap:6px;align-items:center;">
+    <input type="checkbox" id="useAppDataFolder"> เก็บไฟล์ใน Google Drive (appDataFolder) (ซ่อนจากผู้ใช้)
+  </label>
+  <label style="display:flex;gap:6px;align-items:center;">
+    <input type="checkbox" id="sharePublic"> แชร์ไฟล์เป็นสาธารณะ (Anyone with link)
+  </label>
+  <label style="display:flex;gap:6px;align-items:center;">
+    Auto-sync ทุก 
+    <input id="autoSyncMinutes" type="number" min="1" value="10" style="width:72px;margin-left:6px;"> นาที
+  </label>
+  <button id="toggleAutoSync" class="btn">Start Auto-sync</button>
+</div>
+
+</section>
+  <section style="padding:12px;border-top:1px solid #eee;margin-top:12px;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button id="gSignInBtn" class="btn">Sign in with Google</button>
+      <button id="gSignOutBtn" class="btn" style="display:none;">Sign out</button>
+      <div id="gUserInfo" style="margin-left:8px;font-size:0.95rem;color:#333;"></div>
+    </div>
+  </section>
+
+    <aside class="rightPanel">
+      <div class="card compact">
+        <h3>Analytics</h3>
+        <canvas id="chartDaily"></canvas>
+        <div class="summary small">
+วันนี้คงเหลือ: <strong id="sumRemainBarText">0</strong> นาที
+          วันนี้: <strong id="sumToday">0</strong> นาที &nbsp;|&nbsp;
+          สัปดาห์: <strong id="sumWeek">0</strong> นาที &nbsp;|&nbsp;
+          รวม: <strong id="sumAll">0</strong> นาที
+        </div>
+      </div>
+
+      <div class="card compact">
+        <h3>การแจ้งเตือน & Telegram</h3>
+        <label>Bot Token: <input id="tgToken" placeholder="123456:ABC" /></label>
+        <label>Chat ID: <input id="tgChatId" placeholder="987654321" /></label>
+        <label>Proxy URL (optional): <input id="proxyUrl" placeholder="https://your-proxy.example.com/send" /></label>
+        <div class="row small">
+          <label><input type="checkbox" id="sendStartNotif" checked /> ส่งเมื่ิอเริ่ม</label>
+          <label><input type="checkbox" id="sendNearNotif" checked /> ส่งใกล้หมด</label>
+          <label><input type="checkbox" id="sendEndNotif" checked /> ส่งเมื่ิอจบ</label>
+        </div>
+        <div class="row">
+          <button id="testTg" class="btn primary">ทดสอบส่ง</button>
+          <button id="clearTg" class="btn ghost">ล้าง</button>
+        </div>
+        <div id="tgResult" class="small debug"></div>
+      </div>
+
+      <div class="card compact">
+        <h3>History</h3>
+        <div class="filters">
+          <input type="date" id="filterStart" />
+          <input type="date" id="filterEnd" />
+          <button id="applyFilter" class="btn ghost">กรอง</button>
+        </div>
+        <div class="logs"><table id="logsTable"><thead><tr><th>ประเภท</th><th>เริ่ม</th><th>จบ</th><th>นาที</th></tr></thead><tbody></tbody></table></div>
+        <div class="row">
+          <button id="exportCsv" class="btn ghost">Export CSV</button>
+          <button id="clearAll" class="btn danger">ลบทั้งหมด</button>
+        </div>
+      </div>
+
+      <div class="card compact small">
+        <div>โฮสต์ออนไลน์: น้องแนบ proxy Node.js ให้พร้อมใช้งาน (ดู README)</div>
+        <div class="small">แนะนำ: เปิดใน server (localhost) เพื่อให้ Notification และ Telegram ทำงานถูกต้อง</div>
+      </div>
+    </aside>
+  
+  <section class="settings-row" style="padding:12px;border-top:1px solid #eee;margin-top:12px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="saveSettingsBtn" class="btn">บันทึกการตั้งค่า</button>
+      <button id="sendSummaryTg" class="btn">ส่งสรุปวันนี้ (Telegram)</button>
+      <button id="exportXlsx" class="btn">Export Excel (.xlsx)</button>
+      <button id="exportImage" class="btn">Export รูป (PNG)</button>
+    </div>
+  </section>
+
+
+<div style="margin-top:12px;border-top:1px dashed #eee;padding-top:12px;">
+  <label style="display:flex;gap:8px;align-items:center;">
+    PIN/Password (ใช้เข้ารหัสก่อนส่ง Gist): <input id="pinInput" type="password" placeholder="ตั้ง PIN หรือรหัส" style="width:160px;margin-left:6px">
+  </label>
+  <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <button id="setPinBtn" class="btn">ตั้ง PIN</button>
+    <button id="clearPinBtn" class="btn ghost">ลบ PIN ในเครื่อง</button>
+    <button id="createAnonGist" class="btn">สร้าง Gist เปล่า (Anonymous)</button>
+    <input id="anonGistId" placeholder="Gist ID (ถ้ามี)" style="width:220px;padding:6px;border-radius:6px;border:1px solid #ddd">
+    <button id="saveEncryptedGist" class="btn">Save (encrypt) → Gist</button>
+    <button id="loadEncryptedGist" class="btn">Load (decrypt) ← Gist</button>
+  </div>
+<div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+  <button id="genRecoveryCode" class="btn">สร้าง Recovery Code (แชร์)</button>
+  <input id="recoveryCodeOutput" style="width:360px;padding:6px;border-radius:6px;border:1px solid #ddd" placeholder="Recovery code จะอยู่ที่นี่">
+  <button id="useRecoveryCodeBtn" class="btn ghost">ใช้ Recovery Code</button>
+</div>
+
+  <div id="pinInfo" style="margin-top:8px;color:#666;font-size:13px;"></div>
+</div>
+
+</main>
+
+  <footer class="footer small">NOAH345 💜 — V11 PRO • อัปเดต UI และเตรียมให้โฮสต์ออนไลน์ได้</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="app.js"></script>
+
+  <div style="max-width:980px;margin:18px auto 36px;text-align:center;color:var(--noah-muted);font-size:13px;">ระบบบันทึกเวลา gxHo Break-Timer — พัฒนาโดย NOAH345 💜</div>
+</body>
+</html>

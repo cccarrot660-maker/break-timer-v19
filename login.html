@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>gxHo Break-Timer — NOAH345 💜 | เข้าสู่ระบบ - Break Timer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+  <style>
+    /* Basic override to look like index page */
+    body{font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: linear-gradient(180deg,#f8fbff,#f2f7ff); padding:36px;}
+    .card{max-width:980px;margin:16px auto;padding:20px;border-radius:12px;background:#ffffff;border:1px solid rgba(107,70,193,0.06);box-shadow:0 8px 24px rgba(12,12,15,0.06);}
+    h1{font-size:20px;margin:0 0 8px;color:#1f2937}
+    p.lead{color:#475569;margin:6px 0 18px}
+    .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    label{font-size:14px;color:#374151}
+    input[type=password], input[type=text]{padding:10px;border:1px solid #e6e9ef;border-radius:8px;width:320px;}
+    .btn{background:#6b46c1;color:#fff;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:inset 0 -2px 0 rgba(0,0,0,0.06)}
+    .btn.ghost{background:transparent;color:#374151;border:1px solid #e6e9ef}
+    .section-note{background:#f8f7ff;padding:12px;border-radius:8px;border:1px dashed #eee;color:#4b5563;margin-top:12px}
+    .muted{color:#6b7280;font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="noah-brand">NOAH345 💜 — gxHo Break-Timer</div>
+
+  <div class="card">
+    <h1>เข้าสู่ระบบ (PIN)</h1>
+    <p class="lead">กรุณาเข้าสู่ระบบด้วย PIN ที่ตั้งไว้ หากยังไม่ได้ตั้ง PIN ให้สร้างใหม่ด้านล่างค่ะ</p>
+
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+      <div style="flex:1;min-width:280px;">
+        <label>PIN / Password</label><br/>
+        <input id="pinLogin" type="password" placeholder="กรอก PIN ของคุณ">
+      </div>
+      <div style="align-self:flex-end">
+        <button id="loginBtn" class="btn">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+
+    <div class="section-note">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div class="muted">ใช้ GitHub Gist Token กลาง (ตั้งค่าโดยผู้ดูแล)</div>
+          <div class="muted" style="margin-top:6px">ถ้าไม่มี token ระบบจะใช้ anonymous gist หรือเก็บใน localStorage</div>
+        </div>
+        <div style="min-width:160px;text-align:right">
+          <button id="goIndex" class="btn ghost">ไปยังแอปหลัก</button>
+        </div>
+      </div>
+    </div>
+
+    <hr style="margin:18px 0; border:none; border-top:1px solid #f1f3f5">
+
+    <h2 style="font-size:16px;margin:0 0 8px">ยังไม่มี PIN? สร้าง PIN ใหม่</h2>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+      <input id="newPin" type="password" placeholder="ใส่ PIN ใหม่">
+      <input id="confirmPin" type="password" placeholder="ยืนยัน PIN">
+      <button id="createPinBtn" class="btn">สร้าง PIN</button>
+      <label style="display:flex;align-items:center;gap:6px;margin-left:8px" class="muted">
+        <input type="checkbox" id="backupCentralChk"> สำรองไปยัง Gist กลาง
+      </label>
+    </div>
+    <div class="muted" style="margin-bottom:12px">หากสำรอง จะเข้ารหัสด้วย PIN และอัปโหลดไปยัง Gist กลางที่ตั้งไว้ใน config.js</div>
+
+    <h2 style="font-size:16px;margin:0 0 8px">กู้คืน PIN ด้วย Recovery Code</h2>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="recoveryInput" type="text" placeholder="วาง Recovery Code ที่ได้" style="width:520px">
+      <button id="useRecoveryBtn" class="btn">ใช้ Recovery Code</button>
+    </div>
+
+    <div style="margin-top:16px" class="muted">หากต้องการความช่วยเหลือเพิ่มเติม กรุณาติดต่อผู้ดูแลระบบ</div>
+  </div>
+
+<script>
+// keep existing handlers in app.js used: hashPinLocal, saveSettingsLocal, encryptJSON, saveEncryptedToGist, useRecoveryCode
+document.addEventListener('DOMContentLoaded', ()=>{
+  const loginBtn = document.getElementById('loginBtn');
+  const pinLogin = document.getElementById('pinLogin');
+  const newPin = document.getElementById('newPin');
+  const confirmPin = document.getElementById('confirmPin');
+  const createPinBtn = document.getElementById('createPinBtn');
+  const backupChk = document.getElementById('backupCentralChk');
+  const recoveryInput = document.getElementById('recoveryInput');
+  const useRecoveryBtn = document.getElementById('useRecoveryBtn');
+  const goIndex = document.getElementById('goIndex');
+
+  if(loginBtn){ loginBtn.addEventListener('click', async ()=>{
+    const p = pinLogin.value.trim();
+    if(!p) return alert('กรุณากรอก PIN');
+    if(typeof hashPinLocal !== 'function') return alert('ระบบยังไม่พร้อม กรุณาลองใหม่');
+    const h = await hashPinLocal(p);
+    const s = JSON.parse(localStorage.getItem('breaker_settings_v1')||'{}');
+    if(s.pinHash && s.pinHash === h){
+      // set session valid for 8 hours
+      const session = { createdAt: Date.now(), expiresAt: Date.now() + (8*60*60*1000) };
+      localStorage.setItem('session_auth_v1', JSON.stringify(session));
+      alert('ล็อกอินสำเร็จ');
+      window.location.href = 'index.html';
+    }else{
+      alert('PIN ไม่ถูกต้อง');
+    }
+  });
+
+  if(createPinBtn){ createPinBtn.addEventListener('click', async ()=>{
+    const a = newPin.value.trim(); const b = confirmPin.value.trim();
+    if(!a || !b) return alert('กรุณากรอก PIN และยืนยัน');
+    if(a !== b) return alert('PIN ไม่ตรงกัน');
+    if(typeof hashPinLocal !== 'function') return alert('ระบบยังไม่พร้อม');
+    const h = await hashPinLocal(a);
+    saveSettingsLocal({ pinHash: h });
+    alert('สร้าง PIN เรียบร้อย');
+    if(backupChk.checked && window.__CENTRAL_GIST && window.__CENTRAL_GIST.token){
+      try{
+        const payload = getAllDataForSync();
+        const encObj = await encryptJSON(payload, a);
+        const newId = await saveEncryptedToGist(encObj);
+        const s = JSON.parse(localStorage.getItem('breaker_settings_v1')||'{}');
+        s.anonGistId = newId; localStorage.setItem('breaker_settings_v1', JSON.stringify(s));
+        alert('สำรองไปยัง Gist กลางเรียบร้อย\nGist ID: ' + newId);
+      }catch(e){ console.error(e); alert('การสำรองล้มเหลว: ' + e.message); }
+    }
+  });
+
+  if(useRecoveryBtn){ useRecoveryBtn.addEventListener('click', async ()=>{
+    const code = recoveryInput.value.trim();
+    if(!code) return alert('กรุณาวาง Recovery Code');
+    try{
+      await useRecoveryCode(code);
+      alert('กู้ PIN สำเร็จ กรุณเข้าสู่ระบบด้วย PIN ใหม่');
+    }catch(e){ alert('ไม่สามารถกู้ PIN: ' + e.message); }
+  });
+
+  if(goIndex){ goIndex.addEventListener('click', ()=>{ window.location.href='index.html'; }); }
+});
+</script>
+
+  <div style="max-width:980px;margin:18px auto 36px;text-align:center;color:var(--noah-muted);font-size:13px;">ระบบบันทึกเวลา gxHo Break-Timer — พัฒนาโดย NOAH345 💜</div>
+</body>
+</html>
